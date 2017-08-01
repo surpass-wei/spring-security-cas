@@ -43,7 +43,7 @@ public class CustomUserDetailsService
         userInfo.setUsername(token.getName());
         userInfo.setName("管理员");
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();
-        authorities.add(new SimpleGrantedAuthority("R_USER"));
+        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
         authorities.add(new SimpleGrantedAuthority("user_read"));
         userInfo.setAuthorities(authorities);
         return userInfo;

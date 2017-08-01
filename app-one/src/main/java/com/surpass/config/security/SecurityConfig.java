@@ -15,7 +15,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.AuthenticationUserDetailsService;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 
@@ -57,11 +56,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()//配置安全策略
-                .antMatchers("/", "/about").permitAll()//定义/请求不需要验证
-                .anyRequest().authenticated()//其余的所有请求都需要验证
+                .antMatchers("/", "/about").permitAll() //定义/请求不需要验证
+                .anyRequest().authenticated()   //其余的所有请求都需要验证
                 .and()
                 .logout().logoutSuccessUrl("/")
-                .permitAll()//定义logout不需要验证
+                .permitAll()    //定义logout不需要验证
                 .and()
                 .formLogin().loginProcessingUrl("/user");//使用form表单登录
 
@@ -72,17 +71,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .addFilterBefore(singleSignOutFilter(), CasAuthenticationFilter.class);
 
         //http.csrf().disable(); //禁用CSRF
-    }
-
-    /**
-     * 认证的入口
-     */
-    @Bean
-    public CasAuthenticationEntryPoint casAuthenticationEntryPoint() {
-        CasAuthenticationEntryPoint casAuthenticationEntryPoint = new CasAuthenticationEntryPoint();
-        casAuthenticationEntryPoint.setLoginUrl(casProperties.getCasServerLoginUrl());
-        casAuthenticationEntryPoint.setServiceProperties(serviceProperties());
-        return casAuthenticationEntryPoint;
     }
 
     /**
@@ -97,6 +85,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     /**
+     * 认证的入口
+     */
+    @Bean
+    public CasAuthenticationEntryPoint casAuthenticationEntryPoint() {
+        CasAuthenticationEntryPoint casAuthenticationEntryPoint = new CasAuthenticationEntryPoint();
+        casAuthenticationEntryPoint.setLoginUrl(casProperties.getCasServerLoginUrl());
+        casAuthenticationEntryPoint.setServiceProperties(serviceProperties());
+        return casAuthenticationEntryPoint;
+    }
+
+    /**
      * CAS认证过滤器
      */
     @Bean
@@ -105,7 +104,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         casAuthenticationFilter.setAuthenticationManager(authenticationManager());
         casAuthenticationFilter.setFilterProcessesUrl(casProperties.getAppLoginUrl());
         //  认证成功后的处理
-        casAuthenticationFilter.setAuthenticationSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("/index"));
+        //  casAuthenticationFilter.setAuthenticationSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("/index"));
         return casAuthenticationFilter;
     }
 
