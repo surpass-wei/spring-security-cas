@@ -12,7 +12,6 @@ import org.springframework.security.cas.web.CasAuthenticationFilter;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.AuthenticationUserDetailsService;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
@@ -21,37 +20,40 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import javax.annotation.Resource;
 
 /**
+ * spring security配置
+ * <p>
  * Created by surpass.wei@gmail.com on 2017/7/26.
  */
 @Configuration
-@EnableWebSecurity //启用web权限
+//  @EnableWebSecurity //   启用web权限（spring boot无须该注解）
 @EnableGlobalMethodSecurity(prePostEnabled = true) //启用方法验证
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Resource
     private CasProperties casProperties;
 
     /**
-     * 定义认证用户信息获取来源，密码校验规则等
+     * 用户认证配置
      */
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         super.configure(auth);
         auth.authenticationProvider(casAuthenticationProvider());
-        //inMemoryAuthentication 从内存中获取
-        //auth.inMemoryAuthentication().withUser("chengli").password("123456").roles("USER")
-        //.and().withUser("admin").password("123456").roles("ADMIN");
 
-        //jdbcAuthentication从数据库中获取，但是默认是以security提供的表结构
-        //usersByUsernameQuery 指定查询用户SQL
-        //authoritiesByUsernameQuery 指定查询权限SQL
-        //auth.jdbcAuthentication().dataSource(dataSource).usersByUsernameQuery(query).authoritiesByUsernameQuery(query);
+        //  1. 添加在内存中的用户
+        /*auth.inMemoryAuthentication().withUser("chengli").password("123456").roles("USER")
+                .and().withUser("admin").password("123456").roles("ADMIN");*/
 
-        //注入userDetailsService，需要实现userDetailsService接口
-        //auth.userDetailsService(userDetailsService);
+        //  从JDBC获取用户，默认是以security提供的表结构
+        //  usersByUsernameQuery 指定查询用户SQL
+        //  authoritiesByUsernameQuery 指定查询权限SQL
+        /*auth.jdbcAuthentication().dataSource(dataSource).usersByUsernameQuery(query).authoritiesByUsernameQuery(query);*/
+
+        //  自定义用户获取服务: 注入userDetailsService，需要实现userDetailsService接口
+        /*auth.userDetailsService(userDetailsService);*/
     }
 
     /**
-     * 定义安全策略
+     * 请求授权配置
      */
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -70,7 +72,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .addFilterBefore(casLogoutFilter(), LogoutFilter.class)
                 .addFilterBefore(singleSignOutFilter(), CasAuthenticationFilter.class);
 
-        //http.csrf().disable(); //禁用CSRF
+        /*http.csrf().disable(); //禁用CSRF*/
     }
 
     /**
@@ -85,17 +87,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     /**
-     * 认证的入口
-     */
-    @Bean
-    public CasAuthenticationEntryPoint casAuthenticationEntryPoint() {
-        CasAuthenticationEntryPoint casAuthenticationEntryPoint = new CasAuthenticationEntryPoint();
-        casAuthenticationEntryPoint.setLoginUrl(casProperties.getCasServerLoginUrl());
-        casAuthenticationEntryPoint.setServiceProperties(serviceProperties());
-        return casAuthenticationEntryPoint;
-    }
-
-    /**
      * CAS认证过滤器
      */
     @Bean
@@ -104,7 +95,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         casAuthenticationFilter.setAuthenticationManager(authenticationManager());
         casAuthenticationFilter.setFilterProcessesUrl(casProperties.getAppLoginUrl());
         //  认证成功后的处理
-        //  casAuthenticationFilter.setAuthenticationSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("/index"));
+        /*casAuthenticationFilter.setAuthenticationSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("/index"));*/
         return casAuthenticationFilter;
     }
 
@@ -122,11 +113,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return casAuthenticationProvider;
     }
 
-    /*@Bean
-    public UserDetailsService customUserDetailsService(){
-        return new CustomUserDetailsService();
-    }*/
-
     /**
      * 用户自定义的AuthenticationUserDetailsService
      */
@@ -141,7 +127,28 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     /**
-     * 单点登出过滤器
+     * CAS认证的入口
+     */
+    @Bean
+    public CasAuthenticationEntryPoint casAuthenticationEntryPoint() {
+        CasAuthenticationEntryPoint casAuthenticationEntryPoint = new CasAuthenticationEntryPoint();
+        casAuthenticationEntryPoint.setLoginUrl(casProperties.getCasServerLoginUrl());
+        casAuthenticationEntryPoint.setServiceProperties(serviceProperties());
+        return casAuthenticationEntryPoint;
+    }
+
+    /**
+     * CAS请求单点退出过滤器
+     */
+    @Bean
+    public LogoutFilter casLogoutFilter() {
+        LogoutFilter logoutFilter = new LogoutFilter(casProperties.getCasServerLogoutUrl(), new SecurityContextLogoutHandler());
+        logoutFilter.setFilterProcessesUrl(casProperties.getAppLogoutUrl());    //  设置处理登出的路径
+        return logoutFilter;
+    }
+
+    /**
+     * CAS单点登出过滤器
      */
     @Bean
     public SingleSignOutFilter singleSignOutFilter() {
@@ -150,15 +157,4 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         singleSignOutFilter.setIgnoreInitConfiguration(true);
         return singleSignOutFilter;
     }
-
-    /**
-     * 请求单点退出过滤器
-     */
-    @Bean
-    public LogoutFilter casLogoutFilter() {
-        LogoutFilter logoutFilter = new LogoutFilter(casProperties.getCasServerLogoutUrl(), new SecurityContextLogoutHandler());
-        logoutFilter.setFilterProcessesUrl(casProperties.getAppLogoutUrl());
-        return logoutFilter;
-    }
-
 }
